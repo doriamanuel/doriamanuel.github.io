@@ -132,12 +132,32 @@ function configurarListeners() {
 		});
 }
 
+function registrarServiceWorker() {
+	if ("serviceWorker" in navigator) {
+		window.addEventListener("load", () => {
+			this.navigator.serviceWorker
+				.register("/sw.js")
+				.then((reg) => {
+					console.log("El Servico se registro correctamente", reg);
+				})
+				.catch((err) => {
+					console.log("Error al registrar el service worker", err);
+				});
+		});
+	} else {
+		console.log("No existe el objeto service worker en el navegador");
+	}
+}
+
 function start() {
 	console.log("Super Lista");
+	registrarServiceWorker();
 	configurarListeners();
 	renderLista();
 }
 /*-----------------------------*/
 /*  EJECUCIONES                */
 /*-----------------------------*/
-start();
+//start();
+// window.onload = start;
+window.addEventListener("DOMContentLoaded", start);
