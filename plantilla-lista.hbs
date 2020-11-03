@@ -1,0 +1,38 @@
+<ul id="contenedor-lista"class="demo-list-icon mdl-list w-100">
+    {{#listaProductos}}
+    <li class="mdl-list__item">
+        <!-- Campo Icono del auto -->
+        <span class="mdl-list__item-primary-content w-10">
+            <i class="material-icons mdl-list__item-icon">shopping_cart</i>
+        </span>
+        <span class="mdl-list__item-primary-content w-30">
+            {{nombre}}
+        </span>
+        <!-- Cantidad de entrada del auto -->
+        <span class="mdl-list__item-primary-content w-20 ">
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?"
+                    onchange=cambiarCantidad({{id}},this) value="{{cantidad}}" id="sample-cantidad-{{@index}} autocomplete="off"">
+                <label class="mdl-textfield__label" for="sample-cantidad-{{@index}}">Cantidad</label>
+                <span class="mdl-textfield__error">Input no es una Cantidad!</span>
+            </div>
+        </span>
+        <!-- Precio de entrada del auto -->
+        <span class="mdl-list__item-primary-content w-20 ml-item">
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                <input class="mdl-textfield__input" type="text" onchange=cambiarPrecio({{id}},this)
+                    value="{{precio}}" pattern="-?[0-9]*(\.[0-9]+)?" id="sample-precio-{{@index}}  autocomplete="off"" />
+                <label class="mdl-textfield__label" for="sample-precio-{{@index}}">Precio</label>
+                <span class="mdl-textfield__error">Input no es un precio!</span>
+            </div>
+        </span>
+        <!-- Boton para eliminar el producto -->
+        <span>
+            <button onclick=borrarProd({{id}})
+                class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored w-20 ml-item">
+                <i class="material-icons">remove_shopping_cart</i>
+            </button>
+        </span>
+    </li>
+    {{/listaProductos}}
+</ul>

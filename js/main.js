@@ -1,163 +1,218 @@
 /*-----------------------------*/
 /* VARIABLES  GLOBALES         */
 /*-----------------------------*/
-let listaProductos = [
-	{nombre: "Frontier", cantidad: 15, precio: 1250000.0},
-	{nombre: "Sentra", cantidad: 9, precio: 1800000.0},
-	{nombre: "Kicks", cantidad: 21, precio: 1400000.0},
-	{nombre: "Murano", cantidad: 18, precio: 1450000.0},
-];
+let listaProductos = [];
 
-let crearLista = true;
-let ul;
+/*---------LOCALSTORAGE------------------- */
+function guardarListaProductosLocal(lista) {
+	let prods = JSON.stringify(lista);
+	localStorage.setItem("LISTA", prods);
+}
 
-/*-----------------------------*/
-/* FUNCIONES GLOBALES          */
-/*-----------------------------*/
+function leerListaProductosLocal(lista) {
+	let prods = localStorage.getItem("LISTA");
+	if (prods) {
+		lista = JSON.parse(prods);
+	}
+	return lista;
+}
+/*-------------------------------------------*/
 
-function cambiarCantidad(index, el) {
+async function cambiarCantidad(id, el) {
+	let index = listaProductos.findIndex((prod) => prod.id == id);
 	let cantidad = Number(el.value);
-	console.log("cambiar cantidad", index, cantidad);
+	console.log("cambiar cantidad", index, id, cantidad);
 	listaProductos[index].cantidad = cantidad;
+
+	guardarListaProductosLocal(listaProductos);
+
+	let prod = listaProductos[index];
+	try {
+		await api.putProdWeb(id, prod);
+	} catch (error) {
+		console.log("Error putProdWeb Cantidad");
+	}
 }
 
-function cambiarPrecio(index, el) {
+async function cambiarPrecio(id, el) {
+	let index = listaProductos.findIndex((prod) => prod.id == id);
 	let precio = Number(el.value);
-	console.log("cambiar precio", index, precio);
+	console.log("cambiar precio", id, precio);
 	listaProductos[index].precio = precio;
-}
+	guardarListaProductosLocal(listaProductos);
 
-function borrarProd(index) {
-	console.log("Borrar item", index);
-	listaProductos.splice(index, 1);
-	renderLista();
-}
-
-function renderLista() {
-	if (crearLista) {
-		ul = document.createElement("ul");
-		ul.classList.add("demo-list-icon", "mdl-list", "w-100");
-		document.getElementById("lista").appendChild(ul);
+	let prod = listaProductos[index];
+	try {
+		await api.putProdWeb(id, prod);
+	} catch (error) {
+		console.log("Error putProdWeb precio");
 	}
+}
 
-	ul.innerHTML = "";
+async function borrarProd(id) {
+	console.log("Borrar item", id);
+	//	listaProductos.splice(index, 1);
+	try {
+		await api.deleteProdWeb(id);
+		renderLista();
+	} catch (error) {
+		console.log("Error deleteProdWeb precio");
+	}
+}
 
-	listaProductos.forEach((prod, index) => {
-		ul.innerHTML += `<li class="mdl-list__item">
-          <!-- Campo Icono del auto -->
-          <span class="mdl-list__item-primary-content w-10">
-            <i class="material-icons mdl-list__item-icon">shopping_cart</i>
-          </span>
-          <span class="mdl-list__item-primary-content w-30">
-            ${prod.nombre}
-          </span>
-          <!-- Cantidad de entrada del auto -->
-          <span class="mdl-list__item-primary-content w-20 ">
-            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-              <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" onchange=cambiarCantidad(${index},this) value="${prod.cantidad}" id="sample-cantidad-${index}">
-              <label class="mdl-textfield__label" for="sample-cantidad-${index}">Cantidad</label>
-              <span class="mdl-textfield__error">Input no es una Cantidad!</span>
-              </div>
-          </span>
-          <!-- Precio de entrada del auto -->
-          <span class="mdl-list__item-primary-content w-20 ml-item">
-            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-              <input
-                class="mdl-textfield__input"
-                type="text" onchange=cambiarPrecio(${index},this) value="${prod.precio}"
-                pattern="-?[0-9]*(\.[0-9]+)?"
-                id="sample-precio-${index}"
-              />
-              <label class="mdl-textfield__label" for="sample-precio-${index}">Precio</label>
-              <span class="mdl-textfield__error"
-                >Input no es un precio!</span>
-            </div>
-          </span>
-          <!-- Boton para eliminar el producto -->
-          <span>
-            <button onclick=borrarProd(${index})
-              class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored w-20 ml-item">
-              <i class="material-icons">remove_shopping_cart</i>
-            </button>
-          </span>
-      </li>`;
-	});
+async function renderLista() {
+	try {
+		// con FETCH
+		/* let datos = await fetch("plantilla-lista.hbs");
+	let source = await datos.text(); */
+		let source = await $.ajax({url: "plantilla-lista.hbs", method: "get"});
 
-	if (crearLista) {
-		document.getElementById("lista").appendChild(ul);
-	} else {
+		// HANDLEBARS
+		// compile the template
+		var template = Handlebars.compile(source);
+
+		listaProductos = await api.getProdWeb();
+		//	console.log(listaProductos);
+
+		// Inyecto el codigo compilado con los datos en el HTML
+		guardarListaProductosLocal(listaProductos);
+		let data = {listaProductos};
+		$("#lista").html(template(data));
+
+		// Actualizo los elementos de la lista con el DOM
+		let ul = $("#contenedor-lista");
 		componentHandler.upgradeElements(ul);
+	} catch (error) {
+		console.log("Error en render lista", error);
 	}
-	crearLista = false;
 }
 
 function configurarListeners() {
 	/* Ingreso de Productos */
-	document
-		.getElementById("btn-agregar-producto")
-		.addEventListener("click", () => {
-			console.log("btn-entrada-producto");
-			let input = document.getElementById("ingreso-producto");
-			let producto = input.value;
-			console.log(producto);
-			if (producto) {
-				listaProductos.push({nombre: producto, cantidad: 1, precio: 0});
-				renderLista();
-				input.value = null;
-			}
-		});
+	$("#btn-agregar-producto").click(async () => {
+		console.log("btn-entrada-producto");
+
+		let input = $("#ingreso-producto");
+		let producto = input.val();
+		console.log(producto);
+
+		if (producto) {
+			// listaProductos.push({nombre: producto, cantidad: 1, precio: 0});
+			let prod = {nombre: producto, cantidad: 1, precio: 0};
+			let prodPost = await api.postProdWeb(prod);
+			console.log("postProdWeb", producto);
+			renderLista();
+			input.val(null);
+		}
+	});
 
 	/* Borrar todos los productos */
-	document
-		.getElementById("btn-borrar-productos")
-		.addEventListener("click", () => {
-			console.log("btn-borrar-producto");
-			swal({
-				title: "Estas seguro?",
-				text: "Una vez borrado no vas poder recuperar la informacion",
-				icon: "error",
-				buttons: true,
-				dangerMode: true,
-			}).then((willDelete) => {
-				if (willDelete) {
-					swal("Tus datos han sido borrados ", {
-						icon: "success",
-					});
-					listaProductos = [];
-					renderLista();
-				} else {
-					swal("Tus datos no han sido borrados", {icon: "warning"});
-				}
-			});
-		});
+
+	$("#btn-borrar-productos").click(() => {
+		console.log("btn-borrar-productos");
+
+		if (listaProductos.length) {
+			let dialog = $("dialog")[0];
+			dialog.showModal();
+		}
+	});
 }
 
 function registrarServiceWorker() {
 	if ("serviceWorker" in navigator) {
-		window.addEventListener("load", () => {
-			this.navigator.serviceWorker
-				.register("/sw.js")
-				.then((reg) => {
-					console.log("El Servico se registro correctamente", reg);
-				})
-				.catch((err) => {
-					console.log("Error al registrar el service worker", err);
-				});
-		});
+		this.navigator.serviceWorker
+			.register("/sw.js")
+			.then((reg) => {
+				console.log("El Servico se registro correctamente", reg);
+				reg.onupdatefound = () => {
+					const installingworker = reg.installing;
+					installingworker.onstatechange = () => {
+						console.log("SW --->", installingworker.state);
+						if (
+							installingworker.state === "activated" &&
+							this.navigator.serviceWorker.controller
+						) {
+							console.log("REINICIANDO");
+							setTimeout(() => {
+								location.reload();
+							}, 2000);
+						}
+					};
+				};
+			})
+			.catch((err) => {
+				console.log("Error al registrar el service worker", err);
+			});
 	} else {
 		console.log("No existe el objeto service worker en el navegador");
 	}
 }
-
+function iniDialog() {
+	let dialog = $("dialog")[0];
+	//console.log(dialog)
+	if (!dialog.showModal) {
+		dialogPolyfill.registerDialog(dialog);
+	}
+	$(".aceptar").click(async () => {
+		//listaProductos = []
+		try {
+			dialog.close();
+			await api.deleteALLProdWeb();
+			renderLista();
+		} catch (error) {
+			console.log("deleteAllProdWeb", error);
+		}
+	});
+	$(".cancelar").click(() => {
+		dialog.close();
+	});
+}
 function start() {
-	console.log("Super Lista");
 	registrarServiceWorker();
 	configurarListeners();
+	iniDialog();
 	renderLista();
+	//pruebaCaches();
 }
 /*-----------------------------*/
 /*  EJECUCIONES                */
 /*-----------------------------*/
 //start();
 // window.onload = start;
-window.addEventListener("DOMContentLoaded", start);
+//window.addEventListener("DOMContentLoaded", start);
+$(document).ready(start);
+
+/*----------------------------------------------*/
+/*  Prueba de Caches Storage (CACHES)           */
+/*----------------------------------------------*/
+function pruebaCaches() {
+	if (window.caches) {
+		console.log("El Browser soporta caches");
+		caches.keys().then(console.log);
+		caches.open("cache-v1.1").then((cache) => {
+			//console.log(cache);
+			cache.addAll(["/index.html", "js/main.js"]);
+			cache.put("/index.html", new Response("Hola mundo!"));
+			cache.match("/index.html").then((recurso) => {
+				if (recurso) {
+					console.log("Recurso encontrado");
+				} else {
+					console.log("Recurso no encontrado");
+				}
+			});
+			cache.keys().then((recursos) => {
+				recursos.forEach((recurso) => {
+					console.log("Url: ", recurso.url);
+				});
+			});
+			cache.keys().then((recursos) => {
+				console.log("Recursos de la lista", recursos);
+			});
+			caches.keys().then((nombres) => {
+				console.log("Nombres de Caches:", nombres);
+			});
+		});
+	} else {
+		console.log("El Browser NO soporta caches");
+	}
+}
